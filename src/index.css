@@ -124,6 +124,150 @@
   }
 }
 
+@keyframes tailWag {
+  0%, 100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes earScratch {
+  0%, 100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  20%, 60% {
+    transform: translate(12px, -32px) rotate(-22deg);
+  }
+  35%, 75% {
+    transform: translate(15px, -24px) rotate(-8deg);
+  }
+}
+
+@keyframes kittySwat {
+  0%, 55%, 100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  70% {
+    transform: translate(12px, -22px) rotate(-38deg);
+  }
+  82% {
+    transform: translate(8px, -12px) rotate(-18deg);
+  }
+  92% {
+    transform: translate(14px, -20px) rotate(-34deg);
+  }
+}
+
+@keyframes butterflyFlutter {
+  0%, 100% {
+    transform: translate(0px, 0px) rotate(-6deg);
+  }
+  25% {
+    transform: translate(5px, -8px) rotate(8deg);
+  }
+  50% {
+    transform: translate(-4px, -12px) rotate(-4deg);
+  }
+  75% {
+    transform: translate(4px, -4px) rotate(10deg);
+  }
+}
+
+@keyframes carrotNibble {
+  0%, 100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  25% {
+    transform: translate(-2px, 2px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(0px, -1px) rotate(4deg);
+  }
+  75% {
+    transform: translate(-2px, 2px) rotate(-6deg);
+  }
+}
+
+@keyframes grassChew {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  30% {
+    transform: translateY(-2px) rotate(-10deg);
+  }
+  60% {
+    transform: translateY(1px) rotate(8deg);
+  }
+}
+
+@keyframes eyeBlink {
+  0%, 88%, 100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes poopPlop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) translateY(-10px);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.22) translateY(2px);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(0.95) translateY(0px);
+  }
+  45%, 82% {
+    opacity: 1;
+    transform: scale(1) translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.75) translateY(4px);
+  }
+}
+
+@keyframes celebrateJump {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  22% {
+    transform: translateY(-28px) scale(1.16) rotate(-4deg);
+  }
+  45% {
+    transform: translateY(0px) scale(0.96) rotate(0deg);
+  }
+  70% {
+    transform: translateY(-22px) scale(1.12) rotate(4deg);
+  }
+}
+
+@keyframes bubblePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(8px);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.12) translateY(-2px);
+  }
+  35%, 80% {
+    opacity: 1;
+    transform: scale(1) translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-6px);
+  }
+}
+
 .animate-float-slow {
   animation: floatSlow 3.4s ease-in-out infinite;
 }
@@ -160,6 +304,46 @@
   animation: trophyBounce 2s ease-in-out infinite;
 }
 
+.animate-tail-wag {
+  animation: tailWag 0.65s ease-in-out infinite;
+}
+
+.animate-ear-scratch {
+  animation: earScratch 2.2s ease-in-out infinite;
+}
+
+.animate-kitty-swat {
+  animation: kittySwat 2.6s ease-in-out infinite;
+}
+
+.animate-butterfly-flutter {
+  animation: butterflyFlutter 2s ease-in-out infinite;
+}
+
+.animate-carrot-nibble {
+  animation: carrotNibble 0.9s ease-in-out infinite;
+}
+
+.animate-grass-chew {
+  animation: grassChew 0.85s ease-in-out infinite;
+}
+
+.animate-eye-blink {
+  animation: eyeBlink 3.6s ease-in-out infinite;
+}
+
+.animate-poop-plop {
+  animation: poopPlop 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-celebrate-jump {
+  animation: celebrateJump 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-bubble-pop {
+  animation: bubblePop 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float-slow,
   .animate-cloud-drift,
@@ -169,7 +353,17 @@
   .animate-star-pop,
   .animate-confetti-fall,
   .animate-sun-pulse,
-  .animate-trophy-bounce {
+  .animate-trophy-bounce,
+  .animate-tail-wag,
+  .animate-ear-scratch,
+  .animate-kitty-swat,
+  .animate-butterfly-flutter,
+  .animate-carrot-nibble,
+  .animate-grass-chew,
+  .animate-eye-blink,
+  .animate-poop-plop,
+  .animate-celebrate-jump,
+  .animate-bubble-pop {
     animation: none !important;
   }
 }

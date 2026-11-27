@@ -5,13 +5,16 @@ import {
   CountingItemTheme,
   GamePhase,
   MathQuestion,
+  PoopEvent,
   TOTAL_RACE_STEPS,
 } from './types/game';
 import {
+  playAnimalSound,
   playCorrectChime,
   playCountMarimba,
   playFriendlyFinish,
   playGentleBoing,
+  playPoopPlop,
   playTapPop,
   playVictoryFanfare,
   startBackgroundMusic,
@@ -84,6 +87,10 @@ export default function App() {
   const [opponentStep, setOpponentStep] = useState(0);
   const [playerHopKey, setPlayerHopKey] = useState(0);
   const [opponentHopKey, setOpponentHopKey] = useState(0);
+  const [isPlayerMoving, setIsPlayerMoving] = useState(false);
+  const [isOpponentMoving, setIsOpponentMoving] = useState(false);
+  const [playerCelebrateWord, setPlayerCelebrateWord] = useState<string | null>(null);
+  const [poopEvents, setPoopEvents] = useState<PoopEvent[]>([]);
   const [burstKey, setBurstKey] = useState(0);
 
   const [question, setQuestion] = useState<MathQuestion>(() => generateQuestion(1));
@@ -96,6 +103,8 @@ export default function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   const timersRef = useRef<number[]>([]);
+  const idleSoundTurnRef = useRef(0);
+  const poopIdRef = useRef(1);
 
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
@@ -130,6 +139,61 @@ export default function App() {
     };
   }, [clearAllTimers]);
 
+  // Periodic soft idle animal sounds while waiting on the track
+  useEffect(() => {
+    if (phase !== 'RACING') return;
+
+    const intervalId = window.setInterval(() => {
+      if (document.hidden || isLocked || isPlayerMoving || isOpponentMoving || !soundEnabled) {
+        return;
+      }
+      const usePlayer = idleSoundTurnRef.current % 2 === 0;
+      idleSoundTurnRef.current += 1;
+      playAnimalSound(usePlayer ? player.id : opponent.id, 'idle', true);
+    }, 4200);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [phase, isLocked, isPlayerMoving, isOpponentMoving, soundEnabled, player.id, opponent.id]);
+
+  // Occasional silly poop while standing idle on the track
+  useEffect(() => {
+    if (phase !== 'RACING') return;
+
+    const intervalId = window.setInterval(() => {
+      if (document.hidden || isLocked || isPlayerMoving || isOpponentMoving) {
+        return;
+      }
+      if (Math.random() > 0.65) return;
+
+      const lane: 'player' | 'opponent' = Math.random() < 0.55 ? 'player' : 'opponent';
+      const step = lane === 'player' ? playerStep : opponentStep;
+      const pct = (Math.min(step, TOTAL_RACE_STEPS) / TOTAL_RACE_STEPS) * 100;
+      const id = poopIdRef.current++;
+
+      setPoopEvents((prev) => [...prev.slice(-2), { id, lane, pct }]);
+      playPoopPlop(soundEnabled);
+
+      scheduleTimer(() => {
+        setPoopEvents((prev) => prev.filter((evt) => evt.id !== id));
+      }, 3250);
+    }, 7500);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    phase,
+    isLocked,
+    isPlayerMoving,
+    isOpponentMoving,
+    playerStep,
+    opponentStep,
+    soundEnabled,
+    scheduleTimer,
+  ]);
+
   const speakQuestion = useCallback(
     (q: MathQuestion, voiceOn: boolean) => {
       speakWarmly(`What is ${numberToWord(q.left)} plus ${numberToWord(q.right)}?`, voiceOn);
@@ -141,6 +205,7 @@ export default function App() {
     clearAllTimers();
     startBackgroundMusic(soundEnabled);
     playTapPop(soundEnabled);
+    playAnimalSound(chosen.id, 'enthusiastic', soundEnabled);
 
     const others = ANIMALS.filter((a) => a.id !== chosen.id);
     const randomOpponent = others[Math.floor(Math.random() * others.length)];
@@ -152,6 +217,10 @@ export default function App() {
     setOpponentStep(0);
     setPlayerHopKey(0);
     setOpponentHopKey(0);
+    setIsPlayerMoving(false);
+    setIsOpponentMoving(false);
+    setPlayerCelebrateWord(null);
+    setPoopEvents([]);
     setBurstKey(0);
     setQuestion(firstQuestion);
     setWrongChoices([]);
@@ -176,11 +245,15 @@ export default function App() {
       const nextStep = playerStep + 1;
       setPlayerStep(nextStep);
       setPlayerHopKey((k) => k + 1);
+      setIsPlayerMoving(true);
       setBurstKey((k) => k + 1);
 
       playCorrectChime(soundEnabled);
 
       if (nextStep >= TOTAL_RACE_STEPS) {
+        scheduleTimer(() => {
+          setIsPlayerMoving(false);
+        }, 560);
         speakWarmly(`Hooray! Your ${player.name} won the race!`, voiceEnabled);
         scheduleTimer(() => {
           playVictoryFanfare(soundEnabled);
@@ -188,7 +261,21 @@ export default function App() {
           setIsLocked(false);
         }, 950);
       } else {
-        speakWarmly(getRandomPraise(question.left, question.right, question.answer), voiceEnabled);
+        // After hopping to the next spot, the animal jumps & makes its sound (bark/meow) before the next question
+        scheduleTimer(() => {
+          setIsPlayerMoving(false);
+          setPlayerCelebrateWord(`${player.soundWord}!`);
+          playAnimalSound(player.id, 'enthusiastic', soundEnabled);
+        }, 460);
+
+        scheduleTimer(() => {
+          speakWarmly(getRandomPraise(question.left, question.right, question.answer), voiceEnabled);
+        }, 980);
+
+        scheduleTimer(() => {
+          setPlayerCelebrateWord(null);
+        }, 1450);
+
         scheduleTimer(() => {
           const nextQ = generateQuestion(question.id + 1, {
             left: question.left,
@@ -200,7 +287,7 @@ export default function App() {
           setSolvedAnswer(null);
           setIsLocked(false);
           speakQuestion(nextQ, voiceEnabled);
-        }, 1250);
+        }, 1900);
       }
     } else {
       playGentleBoing(soundEnabled);
@@ -210,6 +297,15 @@ export default function App() {
       const nextOpponentStep = opponentStep + 1;
       setOpponentStep(nextOpponentStep);
       setOpponentHopKey((k) => k + 1);
+      setIsOpponentMoving(true);
+
+      scheduleTimer(() => {
+        setIsOpponentMoving(false);
+      }, 560);
+
+      scheduleTimer(() => {
+        playAnimalSound(opponent.id, 'enthusiastic', soundEnabled);
+      }, 110);
 
       scheduleTimer(() => {
         setShakingChoice((prev) => (prev === choice ? null : prev));
@@ -233,6 +329,10 @@ export default function App() {
     clearAllTimers();
     playTapPop(soundEnabled);
     stopSpeaking();
+    setIsPlayerMoving(false);
+    setIsOpponentMoving(false);
+    setPlayerCelebrateWord(null);
+    setPoopEvents([]);
     setPhase('SELECT');
     speakWarmly('Pick your animal friend to race!', voiceEnabled);
   };
@@ -294,6 +394,10 @@ export default function App() {
         opponentStep={opponentStep}
         playerHopKey={playerHopKey}
         opponentHopKey={opponentHopKey}
+        isPlayerMoving={isPlayerMoving}
+        isOpponentMoving={isOpponentMoving}
+        playerCelebrateWord={playerCelebrateWord}
+        poopEvents={poopEvents}
         burstKey={burstKey}
         soundEnabled={soundEnabled}
         voiceEnabled={voiceEnabled}

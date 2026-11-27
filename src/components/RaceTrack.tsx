@@ -1,7 +1,7 @@
 import React from 'react';
 import { Home, Volume2, VolumeX, MessageCircle, MessageCircleOff, Star, Flag } from 'lucide-react';
-import { AnimalProfile, TOTAL_RACE_STEPS } from '../types/game';
-import { AnimalIllustration } from './AnimalArt';
+import { AnimalProfile, PoopEvent, TOTAL_RACE_STEPS } from '../types/game';
+import { AnimalIllustration, PoopIllustration } from './AnimalArt';
 
 interface RaceTrackProps {
   player: AnimalProfile;
@@ -10,6 +10,10 @@ interface RaceTrackProps {
   opponentStep: number;
   playerHopKey: number;
   opponentHopKey: number;
+  isPlayerMoving: boolean;
+  isOpponentMoving: boolean;
+  playerCelebrateWord: string | null;
+  poopEvents: PoopEvent[];
   burstKey: number;
   soundEnabled: boolean;
   voiceEnabled: boolean;
@@ -34,6 +38,10 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
   opponentStep,
   playerHopKey,
   opponentHopKey,
+  isPlayerMoving,
+  isOpponentMoving,
+  playerCelebrateWord,
+  poopEvents,
   burstKey,
   soundEnabled,
   voiceEnabled,
@@ -43,6 +51,8 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
 }) => {
   const playerPct = (Math.min(playerStep, TOTAL_RACE_STEPS) / TOTAL_RACE_STEPS) * 100;
   const opponentPct = (Math.min(opponentStep, TOTAL_RACE_STEPS) / TOTAL_RACE_STEPS) * 100;
+  const playerPoops = poopEvents.filter((evt) => evt.lane === 'player');
+  const opponentPoops = poopEvents.filter((evt) => evt.lane === 'opponent');
 
   return (
     <section aria-label="Race Track" className="w-full shrink-0">
@@ -124,10 +134,10 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
       </div>
 
       {/* Vibrant Grassy 2-Lane Race Track */}
-      <div className="relative w-full bg-green-500 border-y-4 border-green-700 overflow-hidden shadow-inner">
-        {/* Alternating mowed grass stripes */}
+      <div className="relative w-full bg-green-500 border-y-4 border-green-700 shadow-inner">
+        {/* Alternating mowed grass stripes (clipped cleanly inside background layer) */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-35"
+          className="pointer-events-none absolute inset-0 overflow-hidden opacity-35"
           style={{
             backgroundImage:
               'repeating-linear-gradient(90deg, #4ADE80 0px, #4ADE80 48px, #22C55E 48px, #22C55E 96px)',
@@ -169,6 +179,17 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
                 ))}
               </div>
 
+              {/* Occasional silly poop on the grass behind the player */}
+              {playerPoops.map((evt) => (
+                <div
+                  key={`poop-${evt.id}`}
+                  className="pointer-events-none absolute bottom-1.5 -translate-x-1/2 z-10 animate-poop-plop"
+                  style={{ left: `calc(${evt.pct}% - 34px)` }}
+                >
+                  <PoopIllustration className="w-8 h-8 sm:w-9 sm:h-9 drop-shadow-sm" />
+                </div>
+              ))}
+
               {/* Moving Player Animal */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 transition-[left] duration-500 ease-out"
@@ -197,10 +218,23 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
                   </div>
                 )}
 
+                {/* Celebratory sound word bubble when jumping after answering a question */}
+                {playerCelebrateWord && (
+                  <div className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 z-30 animate-bubble-pop">
+                    <span className="inline-block whitespace-nowrap px-3 py-1 rounded-2xl bg-white border-3 border-amber-500 shadow-md font-bubble text-base sm:text-lg font-bold text-slate-800">
+                      {playerCelebrateWord}
+                    </span>
+                  </div>
+                )}
+
                 <div
                   key={`player-hop-${playerHopKey}`}
                   className={`relative flex flex-col items-center ${
-                    playerHopKey > 0 ? 'animate-animal-hop' : 'animate-animal-idle'
+                    playerCelebrateWord
+                      ? 'animate-celebrate-jump'
+                      : isPlayerMoving
+                      ? 'animate-animal-hop'
+                      : 'animate-animal-idle'
                   }`}
                 >
                   {/* Gold star marker showing THIS is your racer */}
@@ -209,6 +243,7 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
                   </span>
                   <AnimalIllustration
                     id={player.id}
+                    isIdle={!isPlayerMoving && !playerCelebrateWord}
                     className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 drop-shadow-[0_4px_2px_rgba(0,0,0,0.22)]"
                   />
                 </div>
@@ -233,6 +268,17 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
                 ))}
               </div>
 
+              {/* Occasional silly poop on the grass behind the opponent */}
+              {opponentPoops.map((evt) => (
+                <div
+                  key={`poop-${evt.id}`}
+                  className="pointer-events-none absolute bottom-1.5 -translate-x-1/2 z-10 animate-poop-plop"
+                  style={{ left: `calc(${evt.pct}% - 34px)` }}
+                >
+                  <PoopIllustration className="w-8 h-8 sm:w-9 sm:h-9 drop-shadow-sm" />
+                </div>
+              ))}
+
               {/* Moving Opponent Animal */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 transition-[left] duration-500 ease-out"
@@ -240,10 +286,11 @@ export const RaceTrack: React.FC<RaceTrackProps> = ({
               >
                 <div
                   key={`opponent-hop-${opponentHopKey}`}
-                  className={opponentHopKey > 0 ? 'animate-animal-hop' : 'animate-animal-idle'}
+                  className={isOpponentMoving ? 'animate-animal-hop' : 'animate-animal-idle'}
                 >
                   <AnimalIllustration
                     id={opponent.id}
+                    isIdle={!isOpponentMoving}
                     className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 drop-shadow-[0_4px_2px_rgba(0,0,0,0.22)]"
                   />
                 </div>

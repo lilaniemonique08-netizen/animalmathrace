@@ -1,4 +1,5 @@
 // Web Audio API synthesizer for gentle, cheerful toddler-friendly sound effects
+import type { AnimalId } from '../types/game';
 
 let audioCtx: AudioContext | null = null;
 
@@ -16,6 +17,226 @@ function getAudioContext(): AudioContext | null {
     audioCtx.resume().catch(() => {});
   }
   return audioCtx;
+}
+
+export function playAnimalSound(
+  animalId: AnimalId,
+  intensity: 'idle' | 'enthusiastic',
+  enabled: boolean
+) {
+  if (!enabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const isLoud = intensity === 'enthusiastic';
+
+  switch (animalId) {
+    case 'dog': {
+      // Soft playful yip when idle; unmistakable cheerful "woof! woof!" when celebrating/jumping
+      const barks = isLoud ? [0, 0.24] : [0];
+      barks.forEach((offset, idx) => {
+        const t = now + offset;
+        const osc = ctx.createOscillator();
+        const overtone = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(isLoud ? 1200 : 850, t);
+
+        osc.type = isLoud ? 'sawtooth' : 'sine';
+        overtone.type = 'triangle';
+        const base = idx === 1 ? 250 : 220;
+        osc.frequency.setValueAtTime(base, t);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.85, t + 0.045);
+        osc.frequency.exponentialRampToValueAtTime(base * 0.72, t + 0.16);
+
+        overtone.frequency.setValueAtTime(base * 2, t);
+        overtone.frequency.exponentialRampToValueAtTime(base * 2.6, t + 0.045);
+        overtone.frequency.exponentialRampToValueAtTime(base * 1.1, t + 0.16);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(isLoud ? 0.28 : 0.075, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+        osc.connect(filter);
+        overtone.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        overtone.start(t);
+        osc.stop(t + 0.19);
+        overtone.stop(t + 0.19);
+      });
+      break;
+    }
+
+    case 'cat': {
+      // Gentle soft purr/mew when idle; expressive "meee-oww!" when celebrating/jumping
+      const osc = ctx.createOscillator();
+      const harmonic = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      harmonic.type = 'sine';
+      if (isLoud) {
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.16);
+        osc.frequency.exponentialRampToValueAtTime(430, now + 0.46);
+
+        harmonic.frequency.setValueAtTime(960, now);
+        harmonic.frequency.exponentialRampToValueAtTime(1680, now + 0.16);
+        harmonic.frequency.exponentialRampToValueAtTime(860, now + 0.46);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.24, now + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+        osc.connect(gain);
+        harmonic.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        harmonic.start(now);
+        osc.stop(now + 0.5);
+        harmonic.stop(now + 0.5);
+      } else {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(490, now + 0.18);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.065, now + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.21);
+      }
+      break;
+    }
+
+    case 'turtle': {
+      // Cute nibble crunches when idle; happy bubbly zoom-chirp when celebrating/jumping
+      if (isLoud) {
+        [0, 0.15].forEach((offset, idx) => {
+          const t = now + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(idx === 0 ? 500 : 650, t);
+          osc.frequency.exponentialRampToValueAtTime(idx === 0 ? 900 : 1120, t + 0.12);
+
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.24, t + 0.018);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.22);
+        });
+      } else {
+        [0, 0.11].forEach((offset, idx) => {
+          const t = now + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(idx === 0 ? 640 : 720, t);
+          osc.frequency.exponentialRampToValueAtTime(920, t + 0.045);
+
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.065, t + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.07);
+        });
+      }
+      break;
+    }
+
+    case 'cheetah': {
+      // Soft chirp/munch when idle; playful bouncy mini-roar when celebrating/jumping
+      if (isLoud) {
+        const osc = ctx.createOscillator();
+        const sub = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1150, now);
+
+        osc.type = 'sawtooth';
+        sub.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(190, now + 0.38);
+
+        sub.frequency.setValueAtTime(110, now);
+        sub.frequency.exponentialRampToValueAtTime(220, now + 0.12);
+        sub.frequency.exponentialRampToValueAtTime(95, now + 0.38);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.26, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        osc.connect(filter);
+        sub.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 0.42);
+        sub.stop(now + 0.42);
+      } else {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(510, now + 0.07);
+        osc.frequency.exponentialRampToValueAtTime(410, now + 0.15);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.065, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+      break;
+    }
+  }
+}
+
+export function playPoopPlop(enabled: boolean) {
+  if (!enabled) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  // Gentle silly cartoon bubble-plop sound
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(195, now);
+  osc.frequency.exponentialRampToValueAtTime(115, now + 0.08);
+  osc.frequency.exponentialRampToValueAtTime(260, now + 0.17);
+
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.linearRampToValueAtTime(0.11, now + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.2);
 }
 
 export function playTapPop(enabled: boolean) {
@@ -75,7 +296,7 @@ export function playCorrectChime(enabled: boolean) {
   const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
 
   notes.forEach((freq, idx) => {
-    const start = now + idx * 0.08;
+    const start = now + idx * 0.06;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -83,14 +304,14 @@ export function playCorrectChime(enabled: boolean) {
     osc.frequency.setValueAtTime(freq, start);
 
     gain.gain.setValueAtTime(0.001, start);
-    gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.38);
+    gain.gain.linearRampToValueAtTime(0.18, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.24);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(start);
-    osc.stop(start + 0.4);
+    osc.stop(start + 0.26);
   });
 }
 

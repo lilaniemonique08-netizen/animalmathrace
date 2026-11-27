@@ -23,6 +23,12 @@ export interface MathQuestion {
   theme: CountingItemTheme;
 }
 
+export interface PoopEvent {
+  id: number;
+  lane: 'player' | 'opponent';
+  pct: number;
+}
+
 export const TOTAL_RACE_STEPS = 6;
 
 export const ANIMALS: AnimalProfile[] = [

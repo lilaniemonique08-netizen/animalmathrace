@@ -63,12 +63,12 @@ export function stopSpeaking() {
   }
 }
 
-export function getRandomPraise(left: number, right: number, answer: number): string {
+export function getRandomPraise(_left: number, _right: number, answer: number): string {
   const phrases = [
-    `Great job! ${numberToWord(left)} plus ${numberToWord(right)} is ${numberToWord(answer)}!`,
-    `Yay! You got ${numberToWord(answer)}!`,
-    `Awesome! ${numberToWord(answer)} is right!`,
-    `Super star! Keep going!`,
+    `Great job!`,
+    `Yay! ${numberToWord(answer)}!`,
+    `Awesome!`,
+    `Super star!`,
   ];
   return phrases[Math.floor(Math.random() * phrases.length)];
 }
